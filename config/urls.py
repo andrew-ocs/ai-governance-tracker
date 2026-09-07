@@ -16,7 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from governance import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', views.governance_overview, name='governance_overview'),
+    path('aspect/<int:aspect_order>/', views.aspect_detail, name='aspect_detail'),
 ]

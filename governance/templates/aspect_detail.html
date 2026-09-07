@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ aspect.name }} | AI Governance Compass</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 24px;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        .back {
+            margin-bottom: 25px;
+        }
+
+        .back a {
+            color: #555;
+            text-decoration: none;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 35px;
+        }
+
+        .element {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .element h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .element-description {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .assessment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .field {
+            background: #f7f7f7;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .field-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .field-value {
+            font-weight: bold;
+        }
+
+        .rationale {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .no-assessment {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="back">
+        <a href="{% url 'governance_overview' %}">
+            ← Governance overview
+        </a>
+    </div>
+
+    <h1>{{ aspect.name }}</h1>
+
+    {% if aspect.description %}
+        <p class="description">
+            {{ aspect.description }}
+        </p>
+    {% endif %}
+
+
+    {% for item in elements %}
+
+        <div class="element">
+
+            <h2>{{ item.element.name }}</h2>
+
+            {% if item.element.description %}
+                <div class="element-description">
+                    {{ item.element.description }}
+                </div>
+            {% endif %}
+
+
+            {% if item.assessment %}
+
+                <div class="assessment-grid">
+
+                    <div class="field">
+                        <div class="field-label">
+                            Applicability
+                        </div>
+
+                        <div class="field-value">
+                            {{ item.assessment.applicability.value }} - {{ item.assessment.applicability.name }}
+                        </div>
+                    </div>
+
+
+                    <div class="field">
+                        <div class="field-label">
+                            Current maturity
+                        </div>
+
+                        <div class="field-value">
+                            {{ item.assessment.maturity.value }} - {{ item.assessment.maturity.name }}
+                        </div>
+                    </div>
+
+                </div>
+
+
+                {% if item.assessment.rationale %}
+
+                    <div class="rationale">
+
+                        <div class="field-label">
+                            Rationale
+                        </div>
+
+                        <p>
+                            {{ item.assessment.rationale }}
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            {% else %}
+
+                <p class="no-assessment">
+                    This element has not been assessed yet.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    {% empty %}
+
+        <p>
+            No active governance elements have been defined
+            for this aspect.
+        </p>
+
+    {% endfor %}
+
+</body>
+
+</html>
