@@ -2,27 +2,30 @@ from django.core.management.base import BaseCommand
 
 from governance.models import (
     AISystem,
-    Framework,
-    GovernanceAspect,
-    GovernanceElement,
+    ElementAssessment,
+    ReferenceFramework,
+    Aspect,
+    Element,
     MaturityCriterion,
     ApplicabilityLevel,
-    FrameworkMapping,
+    ReferenceFrameworkMapping,
+    MaturityLevel,
     Organisation,
 )
 
-from governance.data.framework import aspects, elements, maturity, mappings
-from governance.data.reference import frameworks, applicability_levels
-from governance.data.defaults import organisations, ai_systems
+from governance.data.framework import aspects, applicability_levels, maturity_levels
+from governance.data.reference import frameworks
+from governance.data.defaults import organisations
+from governance.data.example import element_assessments
 
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        # Frameworks
+        # Reference Frameworks
         for framework in frameworks:
-            Framework.objects.get_or_create(
+            ReferenceFramework.objects.get_or_create(
                 short_name=framework.get("short name"),
                 defaults={
                     "name": framework.get("name"),
@@ -30,100 +33,113 @@ class Command(BaseCommand):
                     "description": framework.get("description"),
                 }
             )
-        self.stdout.write("Frameworks created.")
+        self.stdout.write("Reference Frameworks created.")
 
-        # Aspects
-        for order, (name, description) in enumerate(aspects, start=1):
-            GovernanceAspect.objects.get_or_create(
-                name=name,
+        # Our framework aspects, elements, maturity criteria and framework mappings
+        for order, aspect in enumerate(aspects, start=1):
+            _aspect = Aspect.objects.get_or_create(
+                name=aspect.get("name"),
                 defaults={
-                    "description": description,
+                    "description": aspect.get("description"),
                     "order": order,
                 }
             )
-        self.stdout.write("Aspects created.")
 
-        # Elements
-        for aspect_name, element_names in elements.items():
-            aspect = GovernanceAspect.objects.get(
-                name=aspect_name
-            )
-
-            for order, element_name in enumerate(element_names, start=1):
-                GovernanceElement.objects.get_or_create(
-                    aspect=aspect,
-                    name=element_name,
+            # Elements
+            for element in aspect.get("elements", []):
+                _element = Element.objects.get_or_create(
+                    aspect=_aspect[0],
+                    name=element.get("name"),
                     defaults={
-                        "description": "",
+                        "description": element.get("description", ""),
                         "order": order,
                         "active": True,
                     }
                 )
-        self.stdout.write("Elements created.")
 
-        # Maturity Criteria
-        for element_name, levels in maturity.items():
-            element = GovernanceElement.objects.get(
-                name=element_name
-            )
+                # Maturity Criteria
+                for level, criterion in element.get("maturity_criteria", {}).items():
+                    MaturityCriterion.objects.update_or_create(
+                        element=_element[0],
+                        level=level,
+                        defaults={
+                            "criterion": criterion
+                        }
+                    )
 
-            for level, criterion in levels.items():
+                # Framework Mappings
+                for framework_name, coverage in element.get("framework_mappings", {}).items():
+                
+                    _framework = ReferenceFramework.objects.get(
+                        short_name=framework_name
+                    )
+    
+                    ReferenceFrameworkMapping.objects.update_or_create(
+                        element=_element[0],
+                        framework=_framework,
+                        defaults={
+                            "coverage": coverage
+                        }
+                    )
 
-                MaturityCriterion.objects.update_or_create(
-                    element=element,
-                    level=level,
-                    defaults={
-                        "criterion": criterion
-                    }
-                )
-        self.stdout.write("Maturity criteria created.")
-
-        # Framework Mappings
-        for element_name, framework_mappings in mappings.items():
-            element = GovernanceElement.objects.get(
-                name=element_name
-            )
-
-            for framework_name, coverage in framework_mappings.items():
-
-                framework = Framework.objects.get(
-                    short_name=framework_name
-                )
-
-                FrameworkMapping.objects.update_or_create(
-                    element=element,
-                    framework=framework,
-                    defaults={
-                        "coverage": coverage
-                    }
-                )
-        self.stdout.write("Framework mappings created.")
-
-        # Applicability Levels
-        for value, name, description in applicability_levels:
+        # Our framework's Applicability Levels
+        for level, applicability_level in applicability_levels.items():
             ApplicabilityLevel.objects.get_or_create(
-                value=value,
+                value=level,
                 defaults={
-                    "name": name,
-                    "description": description,
+                    "name": applicability_level.get("name"),
+                    "description": applicability_level.get("description"),
                 }
             )
-        self.stdout.write("Applicability levels created.")
+
+        # Our framework's Maturity Levels
+        for level, maturity_level in maturity_levels.items():
+            MaturityLevel.objects.get_or_create(
+                value=level,
+                defaults={
+                    "name": maturity_level.get("name"),
+                    "description": maturity_level.get("description"),
+                }
+            )
+
+        self.stdout.write("Aspects, elements, maturity criteria, applicability and maturity levels, and framework mappings created.")           
+
+        # Seed Data !!!!!!!!!!!!!!!!!!!!!!!!!!
 
         # Organisations
         for org in organisations:
-            Organisation.objects.get_or_create(
+            _org = Organisation.objects.get_or_create(
                 name=org.get("name")
             )
 
-        # AI Systems
-        for ai_system in ai_systems:
-            AISystem.objects.get_or_create(
-                organisation=Organisation.objects.get(name=ai_system.get("organisation")),
-                name=ai_system.get("name"),
-                defaults={
-                    "description": ai_system.get("description")
-                }
-        )
+            # AI Systems
+            for ai_system in org.get("ai_systems", []):
+                AISystem.objects.get_or_create(
+                    organisation=_org[0],
+                    name=ai_system.get("name"),
+                    defaults={
+                        "description": ai_system.get("description")
+                    }
+            )
+        self.stdout.write("Opencast Org and AI systems created.")
 
-        self.stdout.write("Org and AI systems created.")
+        # Example Element Assessments
+        for assessment in element_assessments:
+            _element = Element.objects.get(
+                name=assessment.get("element_name")
+            )
+            _applicability = ApplicabilityLevel.objects.get(
+                value=assessment.get("applicability_level")
+            )
+            _maturity = MaturityLevel.objects.get(
+                value=assessment.get("maturity_level")
+            )
+
+            ElementAssessment.objects.create(
+                element=_element,
+                applicability=_applicability,
+                maturity=_maturity,
+                rationale=assessment.get("rationale"),
+                assessor=assessment.get("assessor", "Andrew"),
+            )
+        self.stdout.write("Example element assessments created.")

@@ -25,10 +25,3 @@ frameworks = [
     },
 ]
 
-applicability_levels = [
-    (0, "N/A", "No meaningful relevance to the AI system."),
-    (1, "Low", "Limited relevance or low potential consequences."),
-    (2, "Medium", "Material relevance with meaningful consequences."),
-    (3, "High", "High relevance with significant potential consequences."),
-    (4, "Critical", "Fundamental to safe, lawful or acceptable operation."),
-]

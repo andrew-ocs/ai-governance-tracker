@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 
-class Framework(models.Model):
+class ReferenceFramework(models.Model):
     name = models.CharField(max_length=200)
     short_name = models.CharField(max_length=50)
     version = models.CharField(max_length=50, blank=True)
@@ -12,7 +12,7 @@ class Framework(models.Model):
         return self.name
 
 
-class GovernanceAspect(models.Model):
+class Aspect(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     order = models.PositiveIntegerField(default=0)
@@ -23,9 +23,9 @@ class GovernanceAspect(models.Model):
     def __str__(self):
         return self.name
 
-class GovernanceElement(models.Model):
+class Element(models.Model):
     aspect = models.ForeignKey(
-        GovernanceAspect,
+        Aspect,
         on_delete=models.PROTECT,
         related_name="elements"
     )
@@ -42,7 +42,7 @@ class GovernanceElement(models.Model):
 
 class MaturityCriterion(models.Model):
     element = models.ForeignKey(
-        GovernanceElement,
+        Element,
         on_delete=models.CASCADE,
         related_name="maturity_criteria"
     )
@@ -62,14 +62,14 @@ class MaturityCriterion(models.Model):
         return f"{self.element.name} - Level {self.level}"
 
 
-class FrameworkMapping(models.Model):
+class ReferenceFrameworkMapping(models.Model):
     element = models.ForeignKey(
-        GovernanceElement,
+        Element,
         on_delete=models.CASCADE,
         related_name="framework_mappings"
     )
     framework = models.ForeignKey(
-        Framework,
+        ReferenceFramework,
         on_delete=models.CASCADE,
         related_name="element_mappings"
     )
@@ -103,6 +103,17 @@ class ApplicabilityLevel(models.Model):
     def __str__(self):
         return self.name
 
+class MaturityLevel(models.Model):
+    name = models.CharField(max_length=50)
+    value = models.PositiveSmallIntegerField()
+    description = models.TextField()
+
+    class Meta:
+        ordering = ["value"]
+
+    def __str__(self):
+        return self.name
+
 class Organisation(models.Model):
     name = models.CharField(max_length=200)
 
@@ -122,24 +133,9 @@ class AISystem(models.Model):
     def __str__(self):
         return self.name
 
-class Assessment(models.Model):
-    ai_system = models.ForeignKey(
-        AISystem,
-        on_delete=models.CASCADE,
-        related_name="assessments"
-    )
-    assessment_date = models.DateTimeField(auto_now_add=True)
-    assessor = models.CharField(max_length=100, default="paul")
-    status = models.CharField(max_length=200)
-
-class ElementAssessment(models.Model):
-    assessment = models.ForeignKey(
-        Assessment,
-        on_delete=models.CASCADE,
-        related_name="element_assessments"
-    )
+class ElementAssessment(models.Model):    
     element = models.ForeignKey(
-        GovernanceElement,
+        Element,
         on_delete=models.PROTECT
     )
 
@@ -148,14 +144,14 @@ class ElementAssessment(models.Model):
         on_delete=models.PROTECT
     )
 
-    maturity = models.PositiveSmallIntegerField(
-        choices=[
-            (1, "Initial"),
-            (2, "Established"),
-            (3, "Embedded"),
-            (4, "Optimised"),
-        ]
+    maturity = models.ForeignKey(
+        MaturityLevel,
+        on_delete=models.PROTECT
     )
 
     rationale = models.TextField()
-    evidence = models.TextField(blank=True)
+    assessment_date = models.DateTimeField(auto_now_add=True)
+    assessor = models.CharField(max_length=100, default="Andrew")
+
+    def __str__(self):
+        return f"{self.element.aspect} - {self.element.name}"
