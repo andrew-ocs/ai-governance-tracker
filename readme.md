@@ -1,5 +1,7 @@
 # AI Governance Compass
 
+[![Opencast AoC 2026](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fandrew-ocs%2Faoc-badge%2Fmain%2Fbadge%2Faoc.json&cacheSeconds=3600)](https://adventofcode.com/2026)
+
 AI Governance Compass is an enterprise AI governance maturity assessment platform.
 
 The tool helps organisations assess how effectively they govern individual AI systems against a structured set of governance capabilities, drawing on established AI governance and risk frameworks.
